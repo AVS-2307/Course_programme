@@ -1,9 +1,7 @@
-import time
 import requests
+import json
 from progress.bar import IncrementalBar
 from datetime import datetime
-from pprint import pprint
-import json
 
 with open('token.txt', 'r') as file_object:
     token = file_object.read().strip()
@@ -89,6 +87,6 @@ class YandexDisk:
 
 if __name__ == '__main__':
     VkUser = VkUser(token, '5.131')
-    data_files = VkUser().photos_get()
+    data_files = VkUser.photos_get()
     YandexDisk = YandexDisk(token_ya)
-    upload_to_yandex = YandexDisk().upload_photo(data_files)
+    upload_to_yandex = YandexDisk.upload_photo(data_files)
