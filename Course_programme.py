@@ -1,5 +1,6 @@
 import time
 import requests
+from progress.bar import IncrementalBar
 
 from pprint import pprint
 import json
@@ -58,33 +59,28 @@ class YandexDisk:
             'Authorization': f'OAth {self.token}'
         }
 
-    def _get_upload_link(self, disk_file_path):
-        upload_url = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
+    def _create_direct(self, directory_name=''):
+        directory_name = input('Введите имя папки для создания: ')
         headers = self.get_headers()
-        params = {'path': disk_file_path, 'overwrite': 'false'}
-        response = requests.get(upload_url, headers=headers, params=params)
-        pprint(response.json())
-        return response.json()
+        params = {'path': directory_name}
+        dir_query = 'https://cloud-api.yandex.net/v1/disk/resources/'
+        requests.put(dir_query, headers=headers, params=params)
+        return directory_name
 
     def upload_photo(self, photo_dict: dict):
-        headers = {'Content-Type': 'application/json', 'Authorization': f'OAuth {self.token}'}
+        upload_query = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
+        headers = self.get_headers()
+        directory = self._create_direct()
+        status_bar = IncrementalBar('Upload process', max=len(files))
         for name, url in photo_dict.items():
             params = {
-                'path': f'Vk_Photos/{name}.jpg',
+                'path': f'{directory}/{name}.jpg',
                 'url': f'{url}'
             }
-            requests.post(url='https://cloud-api.yandex.net/v1/disk/resources/upload', params=params, headers=headers)
+            requests.post(upload_query, params=params, headers=headers)
+            status_bar.next()
+        status_bar.finish()
 
-
-# from progress.bar import IncrementalBar
-
-# bar = IncrementalBar('Countdown', max = len(photo_dict))
-#
-# for item in mylist:
-#     bar.next()
-#     time.sleep(1)
-#
-# bar.finish()
 
 if __name__ == '__main__':
     VkUser = VkUser(token, '5.131')
