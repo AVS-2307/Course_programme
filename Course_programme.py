@@ -1,7 +1,7 @@
 import time
 import requests
 from progress.bar import IncrementalBar
-
+from datetime import datetime
 from pprint import pprint
 import json
 
@@ -21,7 +21,7 @@ class VkUser:
             'v': version
         }
 
-    def all_photos_get(self):
+    def photos_get(self):
         # ### получение полного списка фото пользователя
         owner_id = int(input('Введите ID пользователя: '))
         photos_get_url = self.url + 'photos.get'
@@ -30,23 +30,27 @@ class VkUser:
             'album_id': 'profile',
             'extended': 1
         }
+        req = requests.get(photos_get_url, params={**self.params, **photos_get_params}).json()['response']['items']
+        likes_url_dict = {}
+        json_list = []
+        like_list = []
 
-        req = requests.get(photos_get_url, params={**self.params, **photos_get_params}).json()
-        return req['response']['items']
+        for photo in req:
+            likes = photo['likes']['count']
+            date = datetime.utcfromtimestamp(photo['date']).strftime('%Y-%m-%d-%HH-%MM-%SS')
+            size = photo['sizes'][-1]['type']
+            photo_url = photo['sizes'][-1]['url']
+            if f'{likes}.jpg' not in like_list:
+                likes_url_dict[f'{likes}.jpg'] = photo_url
+                json_list.append({'file_name': f'{likes}.jpg', 'size': size})
+                like_list.append(f'{likes}.jpg')
+            else:
+                likes_url_dict[f'{likes} {date}.jpg'] = photo_url
+                json_list.append({'file_name': f'{likes} {date}.jpg', 'size': size})
 
-    def photos_required_get(self, all_photos_get):
-        # ### получение размера фото 'type' и ссылки 'url' на фото пользователя
-        photo_list = all_photos_get[0]['sizes']
-        photo_list_sorted = sorted(photo_list, key=lambda x: x['type'], reverse=True)
-        # photo_dict_ = {}
-        # for photo in photo_list_sorted:
-        #     photo_dict_ = photo_dict.update({photo['type'], photo['url']})
-        for photo in photo_list_sorted:
-            photo_dict = {'name': photo['type'], 'url': photo['url']}
-
-        # with open(req, 'w') as outfile:
-        #     a = json.dump(req, outfile)
-        #     print(json.dumps(a, indent=2))
+        with open('photo_data.json', 'w') as outfile:
+            json.dump(json_list, outfile, indent=4)
+        return likes_url_dict
 
 
 class YandexDisk:
@@ -67,11 +71,11 @@ class YandexDisk:
         requests.put(dir_query, headers=headers, params=params)
         return directory_name
 
-    def upload_photo(self, photo_dict: dict):
+    def upload_photo(self, photo_dict):
         upload_query = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
         headers = self.get_headers()
         directory = self._create_direct()
-        status_bar = IncrementalBar('Upload process', max=len(files))
+        status_bar = IncrementalBar('Upload process', max=len(photo_dict))
         for name, url in photo_dict.items():
             params = {
                 'path': f'{directory}/{name}.jpg',
@@ -80,12 +84,11 @@ class YandexDisk:
             requests.post(upload_query, params=params, headers=headers)
             status_bar.next()
         status_bar.finish()
+        return print('Upload success')
 
 
 if __name__ == '__main__':
     VkUser = VkUser(token, '5.131')
-    all_photos = VkUser.all_photos_get()
-    VkUser.photos_required_get(all_photos)
-    ya = YandexDisk(token_ya)
-
-    ya.upload_photo('Vk_Photos/', )
+    data_files = VkUser().photos_get()
+    YandexDisk = YandexDisk(token_ya)
+    upload_to_yandex = YandexDisk().upload_photo(data_files)
