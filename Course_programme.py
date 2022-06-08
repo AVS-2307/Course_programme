@@ -58,10 +58,10 @@ class YandexDisk:
     def get_headers(self):
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'OAth {self.token}'
+            'Authorization': f'OAuth {self.token}'
         }
 
-    def _create_direct(self, directory_name=''):
+    def _create_directory(self):
         directory_name = input('Введите имя папки для создания: ')
         headers = self.get_headers()
         params = {'path': directory_name}
@@ -72,12 +72,12 @@ class YandexDisk:
     def upload_photo(self, photo_dict):
         upload_query = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
         headers = self.get_headers()
-        directory = self._create_direct()
+        directory = self._create_directory()
         status_bar = IncrementalBar('Upload process', max=len(photo_dict))
         for name, url in photo_dict.items():
             params = {
-                'path': f'{directory}/{name}.jpg',
-                'url': f'{url}'
+                'path': f'{directory}/{name}',
+                'url': url
             }
             requests.post(upload_query, params=params, headers=headers)
             status_bar.next()
@@ -87,6 +87,6 @@ class YandexDisk:
 
 if __name__ == '__main__':
     VkUser = VkUser(token, '5.131')
-    data_files = VkUser.photos_get()
+    photos = VkUser.photos_get()
     YandexDisk = YandexDisk(token_ya)
-    upload_to_yandex = YandexDisk.upload_photo(data_files)
+    upload_to_YandexDisk = YandexDisk.upload_photo(photos)
