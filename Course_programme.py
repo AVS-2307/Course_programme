@@ -19,8 +19,8 @@ class VkUser:
             'v': version
         }
 
-    def photos_get(self):
-        # ### получение полного списка фото пользователя
+    def photos_get(self, photo_required=5):
+        # ### получение списка фото пользователя по умолчанию (5 штук)
         owner_id = int(input('Введите ID пользователя: '))
         photos_get_url = self.url + 'photos.get'
         photos_get_params = {
@@ -28,12 +28,14 @@ class VkUser:
             'album_id': 'profile',
             'extended': 1
         }
+        # ### запрос пользователя на получение требуемого количества фото для выгрузки
+        photo_required = int(input('Сколько фото требуется выгрузить? '))
         req = requests.get(photos_get_url, params={**self.params, **photos_get_params}).json()['response']['items']
         likes_url_dict = {}
         json_list = []
         like_list = []
 
-        for photo in req:
+        for photo in req[:photo_required]:
             likes = photo['likes']['count']
             date = datetime.utcfromtimestamp(photo['date']).strftime('%Y-%m-%d-%HH-%MM-%SS')
             size = photo['sizes'][-1]['type']
